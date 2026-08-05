@@ -44,9 +44,13 @@ module.exports = {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: '0.25rem',
+        md: '0.25rem',
+        sm: '0.125rem',
+      },
+      letterSpacing: {
+        tighter: '-0.02em',
+        wide: '0.02em',
       },
       keyframes: {
         'accordion-down': {

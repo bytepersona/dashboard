@@ -51,13 +51,14 @@ import React from 'react';
 /** Simple KPI card */
 export function StatCard({ label, value, sub, icon, className }: StatCardProps) {
   return (
-    <div className={cn('rounded-lg border bg-card p-4 space-y-1', className)}>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        {icon && <span className="text-muted-foreground">{icon}</span>}
+    <div className={cn('rounded border bg-card p-3 space-y-1 relative overflow-hidden', className)}>
+      <div className="absolute inset-0 opacity-5 terminal-grid pointer-events-none" />
+      <div className="flex items-center justify-between relative z-10">
+        <span className="text-[9px] text-muted-foreground font-mono uppercase tracking-wider">{label}</span>
+        {icon && <span className="text-muted-foreground/60">{icon}</span>}
       </div>
-      <div className="text-2xl font-bold font-mono">{value}</div>
-      {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
+      <div className="text-2xl font-bold font-mono tabular-nums relative z-10">{value}</div>
+      {sub && <div className="text-[10px] text-muted-foreground font-mono relative z-10">{sub}</div>}
     </div>
   );
 }

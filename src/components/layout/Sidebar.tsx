@@ -83,17 +83,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       >
         {/* Logo */}
-        <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
+        <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0 bg-black/30">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-brand-gradient flex items-center justify-center">
-              <Activity className="w-3.5 h-3.5 text-white" />
+            <div className="w-5 h-5 rounded-sm bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+              <Activity className="w-3 h-3 text-cyan-400" />
             </div>
             <div>
-              <div className="text-xs font-bold text-brand-gradient leading-none">BytePersona</div>
-              <div className="text-[10px] text-muted-foreground leading-none mt-0.5">AI Infrastructure</div>
+              <div className="text-[11px] font-bold font-mono text-cyan-400 leading-none tracking-tighter uppercase">BytePersona</div>
+              <div className="text-[9px] text-muted-foreground leading-none mt-0.5 font-mono tracking-wide">Infrastructure Mon</div>
             </div>
           </div>
-          <button onClick={onClose} className="lg:hidden p-1 hover:bg-accent rounded-md transition-colors">
+          <button onClick={onClose} className="lg:hidden p-1 hover:bg-accent rounded transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -112,9 +112,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       onClick={onClose}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center justify-between gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors',
+                          'flex items-center justify-between gap-2 px-3 py-1.5 rounded text-[11px] font-medium transition-colors font-mono uppercase tracking-wide',
                           isActive
-                            ? 'bg-primary/15 text-primary border border-primary/20'
+                            ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         )
                       }
