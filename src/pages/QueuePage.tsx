@@ -2,8 +2,17 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useServerStore } from '@/stores/serverStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ListOrdered } from 'lucide-react';
+import { ListOrdered, XCircle, RotateCw, Copy, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuLabel,
+} from '@/components/ui/context-menu';
+import { toast } from 'sonner';
 
 function statusBadge(status: string) {
   switch (status) {
@@ -17,11 +26,32 @@ function statusBadge(status: string) {
 
 export function QueuePage() {
   const queue = useServerStore((s) => s.queue);
+  const cancelJob = useServerStore((s) => s.cancelJob);
+  const retryJob = useServerStore((s) => s.retryJob);
 
   const running = queue.filter((j) => j.status === 'running').length;
   const queued  = queue.filter((j) => j.status === 'queued').length;
   const done    = queue.filter((j) => j.status === 'done').length;
   const failed  = queue.filter((j) => j.status === 'failed').length;
+
+  const handleCancel = (jobId: string) => {
+    cancelJob(jobId);
+    toast.error(`Cancelled job ${jobId}`);
+  };
+
+  const handleRetry = (jobId: string) => {
+    retryJob(jobId);
+    toast.success(`Retrying job ${jobId}`, { description: 'Job moved back to queue' });
+  };
+
+  const handleCopyId = (jobId: string) => {
+    navigator.clipboard.writeText(jobId);
+    toast.success('Job ID copied to clipboard');
+  };
+
+  const handleViewPrompt = (jobId: string) => {
+    toast.info('View prompt', { description: 'Not implemented in mock' });
+  };
 
   return (
     <DashboardLayout>
@@ -78,17 +108,49 @@ export function QueuePage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {queue.map((j) => (
-                    <tr key={j.id} className={j.status === 'running' ? 'bg-blue-500/5' : j.status === 'failed' ? 'bg-red-500/5' : ''}>
-                      <td className="py-2 font-mono text-muted-foreground">{j.id}</td>
-                      <td className="py-2 font-medium">{j.model}</td>
-                      <td className="py-2">{statusBadge(j.status)}</td>
-                      <td className="py-2 text-right font-mono">{j.tokens.toLocaleString()}</td>
-                      <td className="py-2 text-right font-mono text-amber-400">{j.waitMs}ms</td>
-                      <td className="py-2 text-right font-mono text-sky-400">
-                        {j.status === 'done' || j.status === 'running' ? `${j.inferMs}ms` : '—'}
-                      </td>
-                      <td className="py-2 text-right font-mono text-muted-foreground">{j.createdAt}</td>
-                    </tr>
+                    <ContextMenu key={j.id}>
+                      <ContextMenuTrigger asChild>
+                        <tr className={cn(
+                          'cursor-pointer hover:bg-white/5 transition-colors',
+                          j.status === 'running' ? 'bg-blue-500/5' :
+                          j.status === 'failed' ? 'bg-red-500/5' : ''
+                        )}>
+                          <td className="py-2 font-mono text-muted-foreground">{j.id}</td>
+                          <td className="py-2 font-medium">{j.model}</td>
+                          <td className="py-2">{statusBadge(j.status)}</td>
+                          <td className="py-2 text-right font-mono">{j.tokens.toLocaleString()}</td>
+                          <td className="py-2 text-right font-mono text-amber-400">{j.waitMs}ms</td>
+                          <td className="py-2 text-right font-mono text-sky-400">
+                            {j.status === 'done' || j.status === 'running' ? `${j.inferMs}ms` : '—'}
+                          </td>
+                          <td className="py-2 text-right font-mono text-muted-foreground">{j.createdAt}</td>
+                        </tr>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuLabel>Job: {j.id}</ContextMenuLabel>
+                        <ContextMenuSeparator />
+                        {(j.status === 'running' || j.status === 'queued') && (
+                          <ContextMenuItem onClick={() => handleCancel(j.id)}>
+                            <XCircle className="w-3 h-3 mr-2 text-red-400" />
+                            Cancel Job
+                          </ContextMenuItem>
+                        )}
+                        {j.status === 'failed' && (
+                          <ContextMenuItem onClick={() => handleRetry(j.id)}>
+                            <RotateCw className="w-3 h-3 mr-2 text-emerald-400" />
+                            Retry Job
+                          </ContextMenuItem>
+                        )}
+                        <ContextMenuItem onClick={() => handleViewPrompt(j.id)}>
+                          <Eye className="w-3 h-3 mr-2" />
+                          View Prompt
+                        </ContextMenuItem>
+                        <ContextMenuItem onClick={() => handleCopyId(j.id)}>
+                          <Copy className="w-3 h-3 mr-2" />
+                          Copy Job ID
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
                   ))}
                 </tbody>
               </table>

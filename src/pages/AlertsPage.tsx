@@ -4,18 +4,39 @@ import { useServerStore } from '@/stores/serverStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Bell, AlertTriangle, Info, CheckCircle, BellOff, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuLabel,
+} from '@/components/ui/context-menu';
+import { toast } from 'sonner';
 
 type Tab = 'active' | 'resolved';
 
 export function AlertsPage() {
   const alerts = useServerStore((s) => s.alerts);
+  const silenceAlert = useServerStore((s) => s.silenceAlert);
+  const resolveAlert = useServerStore((s) => s.resolveAlert);
   const [tab, setTab] = useState<Tab>('active');
 
   const active   = alerts.filter((a) => !a.resolved);
   const resolved = alerts.filter((a) =>  a.resolved);
   const shown    = tab === 'active' ? active : resolved;
+
+  const handleSilence = (alertId: string, title: string, hours: number) => {
+    silenceAlert(alertId, hours * 3600000);
+    toast.success(`Silenced "${title}" for ${hours}h`);
+  };
+
+  const handleResolve = (alertId: string, title: string) => {
+    resolveAlert(alertId);
+    toast.success(`Resolved "${title}"`);
+  };
 
   const severityIcon = (sev: string) => {
     if (sev === 'critical') return <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />;
@@ -76,38 +97,59 @@ export function AlertsPage() {
             </Card>
           )}
           {shown.map((a) => (
-            <Card key={a.id} className={cn(
-              'transition-colors',
-              a.severity === 'critical' && !a.resolved ? 'border-red-500/40 bg-red-500/5' :
-              a.severity === 'warning'  && !a.resolved ? 'border-amber-500/30' : ''
-            )}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  {severityIcon(a.severity)}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="font-semibold text-sm">{a.title}</span>
-                      {severityBadge(a.severity)}
-                      {a.resolved && <Badge variant="success">Resolved</Badge>}
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-2">{a.message}</p>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>Triggered: {a.triggeredAt}</span>
-                      {!a.resolved && (
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-muted-foreground hover:text-foreground">
-                            Silence 1h
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-emerald-400 hover:text-emerald-300">
-                            Resolve
-                          </Button>
+            <ContextMenu key={a.id}>
+              <ContextMenuTrigger asChild>
+                <Card className={cn(
+                  'transition-colors cursor-pointer hover:border-cyan-500/20',
+                  a.severity === 'critical' && !a.resolved ? 'border-red-500/40 bg-red-500/5' :
+                  a.severity === 'warning'  && !a.resolved ? 'border-amber-500/30' : ''
+                )}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      {severityIcon(a.severity)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-semibold text-sm">{a.title}</span>
+                          {severityBadge(a.severity)}
+                          {a.resolved && <Badge variant="success">Resolved</Badge>}
                         </div>
-                      )}
+                        <p className="text-xs text-muted-foreground mb-2">{a.message}</p>
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                          <span>Triggered: {a.triggeredAt}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuLabel>Alert: {a.title}</ContextMenuLabel>
+                <ContextMenuSeparator />
+                {!a.resolved && (
+                  <>
+                    <ContextMenuItem onClick={() => handleSilence(a.id, a.title, 1)}>
+                      <BellOff className="w-3 h-3 mr-2" />
+                      Silence for 1 hour
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => handleSilence(a.id, a.title, 24)}>
+                      <BellOff className="w-3 h-3 mr-2" />
+                      Silence for 24 hours
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => handleResolve(a.id, a.title)}>
+                      <Check className="w-3 h-3 mr-2 text-emerald-400" />
+                      Resolve Alert
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                  </>
+                )}
+                <ContextMenuItem onClick={() => toast.info('Create ticket', { description: 'Not implemented in mock' })}>
+                  Create Jira Ticket
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => toast.info('View history', { description: 'Not implemented in mock' })}>
+                  View Firing History
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           ))}
         </div>
 

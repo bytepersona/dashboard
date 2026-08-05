@@ -290,6 +290,15 @@ const INITIAL_LOGS: LogEntry[] = Array.from({ length: 60 }, () => randomLogEntry
 interface ServerStore extends ServerState {
   tick: number;
   tickServer: () => void;
+
+  // Actions
+  unloadModel: (modelId: string) => void;
+  reloadModel: (modelId: string) => void;
+  cancelJob: (jobId: string) => void;
+  retryJob: (jobId: string) => void;
+  silenceAlert: (alertId: string, durationMs: number) => void;
+  resolveAlert: (alertId: string) => void;
+  killCore: (coreId: number) => void;
 }
 
 export const useServerStore = create<ServerStore>((set) => ({
@@ -465,4 +474,55 @@ export const useServerStore = create<ServerStore>((set) => ({
       uptimeSeconds: s.uptimeSeconds + 2,
     };
   }),
+
+  // ─── Actions ─────────────────────────────────────────────────────────────────
+
+  unloadModel: (modelId: string) => set((s) => ({
+    models: s.models.map((m) =>
+      m.id === modelId
+        ? { ...m, status: 'unloading', vramUsed: 0, reqPerSec: 0 }
+        : m
+    ),
+    vramUsedGib: s.vramUsedGib - (s.models.find((m) => m.id === modelId)?.vramUsed ?? 0),
+  })),
+
+  reloadModel: (modelId: string) => set((s) => ({
+    models: s.models.map((m) =>
+      m.id === modelId
+        ? { ...m, status: 'loading' }
+        : m
+    ),
+  })),
+
+  cancelJob: (jobId: string) => set((s) => ({
+    queue: s.queue.map((j) =>
+      j.id === jobId ? { ...j, status: 'failed' as const } : j
+    ),
+  })),
+
+  retryJob: (jobId: string) => set((s) => ({
+    queue: s.queue.map((j) =>
+      j.id === jobId ? { ...j, status: 'queued' as const } : j
+    ),
+  })),
+
+  silenceAlert: (alertId: string, durationMs: number) => set((s) => ({
+    alerts: s.alerts.map((a) =>
+      a.id === alertId
+        ? { ...a, resolved: true } // In real app, would set silenced-until timestamp
+        : a
+    ),
+  })),
+
+  resolveAlert: (alertId: string) => set((s) => ({
+    alerts: s.alerts.map((a) =>
+      a.id === alertId ? { ...a, resolved: true } : a
+    ),
+  })),
+
+  killCore: (coreId: number) => set((s) => ({
+    cores: s.cores.map((c) =>
+      c.id === coreId ? { ...c, usage: 0, temp: clamp(c.temp - 15, 35, 92) } : c
+    ),
+  })),
 }));

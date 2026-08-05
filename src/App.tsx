@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { useServerTick } from '@/hooks/useServerTick';
+import { Toaster } from '@/components/ui/sonner';
 import { OverviewPage }   from '@/pages/OverviewPage';
 import { ComputePage }    from '@/pages/ComputePage';
 import { MemoryPage }     from '@/pages/MemoryPage';
@@ -17,20 +18,23 @@ export default function App() {
   useServerTick(); // global 2-second tick
 
   return (
-    <Routes>
-      <Route path="/"          element={<OverviewPage />} />
-      <Route path="/compute"   element={<ComputePage />} />
-      <Route path="/memory"    element={<MemoryPage />} />
-      <Route path="/storage"   element={<StoragePage />} />
-      <Route path="/network"   element={<NetworkPage />} />
-      <Route path="/inference" element={<InferencePage />} />
-      <Route path="/models"    element={<ModelsPage />} />
-      <Route path="/queue"     element={<QueuePage />} />
-      <Route path="/logs"      element={<LogsPage />} />
-      <Route path="/alerts"    element={<AlertsPage />} />
-      <Route path="/metrics"   element={<MetricsPage />} />
-      <Route path="/settings"  element={<SettingsPage />} />
-      <Route path="/settings/:tab" element={<SettingsPage />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/"          element={<OverviewPage />} />
+        <Route path="/compute"   element={<ComputePage />} />
+        <Route path="/memory"    element={<MemoryPage />} />
+        <Route path="/storage"   element={<StoragePage />} />
+        <Route path="/network"   element={<NetworkPage />} />
+        <Route path="/inference" element={<InferencePage />} />
+        <Route path="/models"    element={<ModelsPage />} />
+        <Route path="/queue"     element={<QueuePage />} />
+        <Route path="/logs"      element={<LogsPage />} />
+        <Route path="/alerts"    element={<AlertsPage />} />
+        <Route path="/metrics"   element={<MetricsPage />} />
+        <Route path="/settings"  element={<SettingsPage />} />
+        <Route path="/settings/:tab" element={<SettingsPage />} />
+      </Routes>
+      <Toaster />
+    </>
   );
 }

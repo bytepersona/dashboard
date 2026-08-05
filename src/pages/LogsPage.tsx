@@ -4,8 +4,17 @@ import { useServerStore, LogEntry } from '@/stores/serverStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ScrollText, Search, Pause, Play } from 'lucide-react';
+import { ScrollText, Search, Pause, Play, Copy, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuLabel,
+} from '@/components/ui/context-menu';
+import { toast } from 'sonner';
 
 type Level = 'ALL' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 
@@ -48,6 +57,17 @@ export function LogsPage() {
     INFO:  logs.filter((l) => l.level === 'INFO').length,
     WARN:  logs.filter((l) => l.level === 'WARN').length,
     ERROR: logs.filter((l) => l.level === 'ERROR').length,
+  };
+
+  const handleCopyLog = (log: LogEntry) => {
+    const text = `[${log.ts}] ${log.level} ${log.service}: ${log.message}`;
+    navigator.clipboard.writeText(text);
+    toast.success('Log entry copied to clipboard');
+  };
+
+  const handleFilterByService = (service: string) => {
+    setSearch(service);
+    toast.info(`Filtered by service: ${service}`);
   };
 
   return (
@@ -123,12 +143,37 @@ export function LogsPage() {
           <CardContent className="p-0">
             <div className="h-[500px] overflow-y-auto scrollbar-thin bg-black/40 rounded-b-lg p-3 font-mono text-[11px] space-y-0.5">
               {displayed.slice(-200).map((l) => (
-                <div key={l.id} className="flex items-start gap-2 leading-relaxed hover:bg-white/5 px-1 rounded">
-                  <span className="text-muted-foreground/50 shrink-0 select-none">{l.ts}</span>
-                  <span className={cn('shrink-0 w-12 text-right', LEVEL_COLORS[l.level])}>{l.level}</span>
-                  <span className="text-violet-400/70 shrink-0 hidden sm:inline">{l.service}</span>
-                  <span className="text-foreground/80 break-all">{l.message}</span>
-                </div>
+                <ContextMenu key={l.id}>
+                  <ContextMenuTrigger asChild>
+                    <div className="flex items-start gap-2 leading-relaxed hover:bg-white/5 px-1 rounded cursor-pointer">
+                      <span className="text-muted-foreground/50 shrink-0 select-none">{l.ts}</span>
+                      <span className={cn('shrink-0 w-12 text-right', LEVEL_COLORS[l.level])}>{l.level}</span>
+                      <span className="text-violet-400/70 shrink-0 hidden sm:inline">{l.service}</span>
+                      <span className="text-foreground/80 break-all">{l.message}</span>
+                    </div>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuLabel>{l.level} Log</ContextMenuLabel>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onClick={() => handleCopyLog(l)}>
+                      <Copy className="w-3 h-3 mr-2" />
+                      Copy Log Entry
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => handleFilterByService(l.service)}>
+                      <Filter className="w-3 h-3 mr-2" />
+                      Filter by Service ({l.service})
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onClick={() => toast.info('Create alert', { description: 'Not implemented in mock' })}>
+                      Create Alert from This
+                    </ContextMenuItem>
+                    {l.level === 'ERROR' && (
+                      <ContextMenuItem onClick={() => toast.info('Stack trace', { description: 'Not implemented in mock' })}>
+                        View Stack Trace
+                      </ContextMenuItem>
+                    )}
+                  </ContextMenuContent>
+                </ContextMenu>
               ))}
               {displayed.length === 0 && (
                 <p className="text-muted-foreground text-center py-8">No log entries match the current filter.</p>

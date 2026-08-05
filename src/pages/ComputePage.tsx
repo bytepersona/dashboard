@@ -6,8 +6,17 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell,
 } from 'recharts';
-import { Cpu, Thermometer } from 'lucide-react';
+import { Cpu, Thermometer, Power, Zap } from 'lucide-react';
 import { statusColor } from '@/lib/utils';
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuLabel,
+} from '@/components/ui/context-menu';
+import { toast } from 'sonner';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -29,8 +38,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function ComputePage() {
   const s = useServerStore();
+  const killCore = useServerStore((s) => s.killCore);
   const cpuAvg = s.cores.reduce((a, b) => a + b.usage, 0) / s.cores.length;
   const histSlice = s.systemHistory.slice(-60);
+
+  const handleKillCore = (coreId: number) => {
+    killCore(coreId);
+    toast.success(`Killed processes on core ${coreId}`, { description: 'Usage dropped to 0%' });
+  };
+
+  const handleThrottle = (coreId: number) => {
+    toast.info(`Throttle core ${coreId} to 80%`, { description: 'Not implemented in mock' });
+  };
+
+  const handleViewThreads = (coreId: number) => {
+    toast.info(`View threads on core ${coreId}`, { description: 'Not implemented in mock' });
+  };
 
   return (
     <DashboardLayout>
@@ -142,22 +165,45 @@ export function ComputePage() {
           <CardContent>
             <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
               {s.cores.map((c) => (
-                <div key={c.id} className="rounded-md border bg-muted/30 p-2.5 space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground font-mono">Core {c.id}</span>
-                    <span className={statusColor(c.usage) + ' font-mono font-semibold'}>{c.usage.toFixed(1)}%</span>
-                  </div>
-                  <div className="h-1 bg-muted rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-700 ${c.usage >= 90 ? 'bg-red-500' : c.usage >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                      style={{ width: `${c.usage}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span>{(c.freq / 1000).toFixed(2)} GHz</span>
-                    <span className={c.temp >= 85 ? 'text-red-400' : c.temp >= 70 ? 'text-amber-400' : 'text-blue-400'}>
-                      {c.temp.toFixed(0)}°C
-                    </span>
-                  </div>
-                </div>
+                <ContextMenu key={c.id}>
+                  <ContextMenuTrigger asChild>
+                    <div className="rounded-md border bg-muted/30 p-2.5 space-y-1.5 cursor-pointer hover:border-cyan-500/30 transition-colors">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground font-mono">Core {c.id}</span>
+                        <span className={statusColor(c.usage) + ' font-mono font-semibold'}>{c.usage.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-1 bg-muted rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-700 ${c.usage >= 90 ? 'bg-red-500' : c.usage >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                          style={{ width: `${c.usage}%` }} />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>{(c.freq / 1000).toFixed(2)} GHz</span>
+                        <span className={c.temp >= 85 ? 'text-red-400' : c.temp >= 70 ? 'text-amber-400' : 'text-blue-400'}>
+                          {c.temp.toFixed(0)}°C
+                        </span>
+                      </div>
+                    </div>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuLabel>Core {c.id}</ContextMenuLabel>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onClick={() => handleKillCore(c.id)}>
+                      <Power className="w-3 h-3 mr-2 text-red-400" />
+                      Kill Processes
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => handleThrottle(c.id)}>
+                      <Zap className="w-3 h-3 mr-2 text-amber-400" />
+                      Throttle to 80%
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onClick={() => handleViewThreads(c.id)}>
+                      View Running Threads
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => toast.info('CPU flamegraph', { description: 'Not implemented in mock' })}>
+                      CPU Flamegraph
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               ))}
             </div>
           </CardContent>
